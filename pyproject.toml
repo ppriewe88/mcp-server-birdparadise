@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "agents-mcp-server"
+version = "0.1.0"
+description = "MCP Server for Bird Paradise database"
+authors = ["patrick.priewe <ppriewe@gmx.net>"]
+packages = [{ include = "mcp_server" }]
+
+[tool.poetry.dependencies]
+python = ">=3.10,<3.13"
+mcp = "1.13.1"
+pymssql = "^2.3.0"
+python-dotenv = "^1.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
