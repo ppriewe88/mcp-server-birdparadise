@@ -35,3 +35,29 @@ Regeln:
 - Für die Tabelle "invoices_status" verwendest du **nie** den alias "is", sondern immer den alias "invst".
 - Verwende **immer einen alias für jede Tabelle** und gib bei jeder Spalte im SELECT den alias an! Arbeite **niemals** ohne alias!
     """
+
+revenue_view_schema = """
+Du arbeitest mit der View "vw_4BasisFürUmsatzanalysen". Diese View enthält ausschließlich BEZAHLTE Rechnungen und hat folgende Spalten:
+
+| Spalte                    | Typ            | Bedeutung                                      |
+|---------------------------|----------------|-------------------------------------------------|
+| Rechnungs_ID              | INT            | ID der Rechnung (invoices.id)                   |
+| Umsatz                    | DECIMAL(10,2)  | Gesamtpreis der Rechnung (invoices.total_price)  |
+| Warengruppe               | INT            | Kategorie-ID des Produkts (products.category_id) |
+| Kunden_ID                 | INT            | ID des Kunden (orders.customer_id)               |
+| Bestellmenge              | BIGINT         | Bestellte Stückzahl (orders.quantity)             |
+| Produkt_ID                | INT            | ID des Produkts (products.id)                    |
+| Einkaufspreis             | DECIMAL(10,2)  | Einkaufspreis pro Stück                          |
+| Verkaufspreis             | DECIMAL(10,2)  | Verkaufspreis pro Stück (brutto, inkl. 19% MwSt) |
+| Verkaufspreis_ohne_MWSt   | DECIMAL(10,2)  | Verkaufspreis pro Stück (netto)                  |
+| Rohgewinn                 | DECIMAL(10,2)  | (VK netto - EK) * Menge                         |
+| Lieferanten_ID            | INT            | ID des Lieferanten (products.supplier_id)        |
+
+Regeln für SQL-Queries auf diese View:
+- Verwende immer den Alias "v" für die View: FROM vw_4BasisFürUmsatzanalysen v
+- Verwende niemals LIMIT, sondern SELECT TOP X wenn du einschränken musst.
+- Wenn du Produkt-, Kunden-, Kategorie- oder Lieferantennamen brauchst, joine die entsprechende Tabelle (products, customers, category, suppliers).
+- Verwende bei JOINs immer Aliase: products p, customers c, category cat, suppliers s.
+- Gib immer nur die SQL-Query zurück, ohne Erklärungen oder Kommentare.
+- Für Zeiträume: Die View hat KEIN Datum. Wenn nach Zeiträumen gefragt wird, joine über Rechnungs_ID auf invoices und nutze invoices.created_at.
+"""
