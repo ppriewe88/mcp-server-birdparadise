@@ -285,7 +285,7 @@ class DatabaseCapabilities:
 
     def get_revenue_view_schema(self) -> Structured:
         """Return the schema and query instructions for vw_4BasisFürUmsatzanalysen."""
-        return Structured(data={"schema": revenue_view_schema})
+        return self._to_structured([{"info": revenue_view_schema}])
 
     def execute_revenue_query(self, query: str) -> Structured:
         """Execute a read-only SQL query against the revenue view."""

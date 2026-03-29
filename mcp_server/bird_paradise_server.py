@@ -279,9 +279,9 @@ def pay_invoice_capa(
             Muss vom Nutzer bei der Anfrage angegeben werden (ganzzahlig). Wenn nicht gegeben, erfragen.""",
         ),
     ],
-) -> str:
+) -> Structured:
     """Tool, um eine Rechnung zu bezahlen."""
-    result: str = db.pay_invoice(invoice_id)
+    result: Structured = db.pay_invoice(invoice_id)
     return result
 
 @mcp.tool(
@@ -334,9 +334,9 @@ def update_invoice_due_limit_capa(
     name="get_revenue_view_schema",
     description="Gibt das Schema und die Query-Anweisungen für die Umsatzanalyse-View zurück. Rufe dieses Tool ZUERST auf, bevor du eine Umsatz-Query formulierst.",
 )
-def get_revenue_view_schema_capa() -> str:
+def get_revenue_view_schema_capa() -> Structured:
     """Tool, um das Schema der Umsatzanalyse-View zu erhalten."""
-    result: str = db.get_revenue_view_schema()
+    result: Structured = db.get_revenue_view_schema()
     return result
 
 
