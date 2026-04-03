@@ -21,7 +21,7 @@ class Structured(BaseModel):
 
 class DatabaseCapabilities:
     def __init__(self) -> None:
-        self.connection: Any = establish_database_connection()
+        pass
 
     def _make_query(
         self,
@@ -31,7 +31,8 @@ class DatabaseCapabilities:
     ) -> QueryResult:
         """Send query to the database and return results."""
         try:
-            cursor = self.connection.cursor(as_dict=True)
+            connection = establish_database_connection()
+            cursor = connection.cursor(as_dict=True)
 
             if procedure and params:
                 cursor.execute(input_query, params)
@@ -45,17 +46,17 @@ class DatabaseCapabilities:
             try:
                 rows = cursor.fetchall()
                 if rows:
-                    self.connection.commit()
+                    connection.commit()
                     return rows
             except Exception:
-                self.connection.commit()
+                connection.commit()
                 result: Status = {
                     "status": "success (fallback)",
                     "message": "Query executed, no data returned.",
                 }
                 return result
 
-            self.connection.commit()
+            connection.commit()
             result = {
                 "status": "success",
                 "message": "Query executed, no data returned.",
@@ -232,6 +233,24 @@ class DatabaseCapabilities:
             JOIN products p ON a.Produkt_ID = p.id
             WHERE a.Bestell_ID = {order_id}"""
         query_result = self._make_query(select_query)
+        return self._to_structured(query_result)
+
+    def show_rejected_orders(self) -> Structured:
+        """Show all rejected orders (status 'abgelehnt')."""
+        query = """
+            SELECT o.id AS order_id, o.customer_id,
+                   c.name AS customer_name,
+                   o.product_id, p.name AS product_name,
+                   o.quantity,
+                   FORMAT(o.created_at, 'yyyy-MM-dd') AS created_at,
+                   os.name AS status
+            FROM orders o
+            JOIN customers c ON c.id = o.customer_id
+            JOIN products p ON p.id = o.product_id
+            JOIN orders_status os ON os.id = o.status_id
+            WHERE os.name LIKE '%abgelehnt%'
+            ORDER BY o.created_at DESC"""
+        query_result = self._make_query(query)
         return self._to_structured(query_result)
 
     ########################## AUFTRÄGE (UNBEZAHLT / DETAILS) ##########################

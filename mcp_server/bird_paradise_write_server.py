@@ -35,6 +35,7 @@ db = DatabaseCapabilities()
 
 @mcp.tool(
     name="create_customer",
+    title="Kunde anlegen",
     description="Neuen Kunden anlegen. Pflichtfelder: Name und E-Mail. Optional: Telefon, Stadt, Adresse, Land, Rabatt.",
 )
 def create_customer_capa(
@@ -67,6 +68,7 @@ def create_customer_capa(
 
 @mcp.tool(
     name="create_product",
+    title="Produkt anlegen",
     description="Neues Produkt anlegen. Hinweis: Verkaufspreis muss mindestens 19% über dem Einkaufspreis liegen.",
 )
 def create_product_capa(
@@ -94,6 +96,7 @@ def create_product_capa(
 
 @mcp.tool(
     name="restock_inventory",
+    title="Lagerbestand auffüllen",
     description="Lagerbestand für ein Produkt auffüllen. Erhöht den Bestand um die angegebene Menge.",
 )
 def restock_inventory_capa(
@@ -115,6 +118,7 @@ def restock_inventory_capa(
 
 @mcp.tool(
     name="create_order",
+    title="Auftrag anlegen",
     description="""Neuen Auftrag (Bestellung) anlegen. Die Datenbank prüft automatisch den Lagerbestand:
 - Falls genug Bestand: Auftrag wird auf 'beauftragt' gesetzt, Lager wird reduziert, Rechnung wird automatisch erstellt.
 - Falls nicht genug Bestand: Auftrag wird auf 'abgelehnt' gesetzt, keine Rechnung.""",
@@ -149,6 +153,7 @@ def create_order_capa(
 
 @mcp.tool(
     name="retry_rejected_order",
+    title="Abgelehnte Bestellung prüfen",
     description="Abgelehnte Bestellung erneut prüfen (z.B. nachdem Lager aufgefüllt wurde). Prüft Bestand und setzt bei Erfolg auf 'beauftragt' mit Rechnungsanlage.",
 )
 def retry_rejected_order_capa(
@@ -169,6 +174,7 @@ def retry_rejected_order_capa(
 
 @mcp.tool(
     name="pay_invoice",
+    title="Rechnung bezahlen",
     description="Bezahlen einer Rechnung. Nutze dieses Tool, um den Status einer Rechnung auf 'bezahlt' zu setzen und eventuelle Rabatte zu prüfen. Input: Rechnungs-ID",
 )
 def pay_invoice_capa(
@@ -188,6 +194,7 @@ def pay_invoice_capa(
 
 @mcp.tool(
     name="update_invoice_due_limit",
+    title="Zahlungsfrist Rechnung ändern",
     description="Zahlungsfrist (due_limit in Tagen) einer Rechnung ändern. Das Fälligkeitsdatum wird automatisch neu berechnet.",
 )
 def update_invoice_due_limit_capa(

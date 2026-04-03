@@ -35,6 +35,7 @@ db = DatabaseCapabilities()
 
 @mcp.tool(
     name="find_customer",
+    title="Kunde abrufen",
     description="Rufe dieses Tool auf, um Informationen über einen Kunden anhand seiner ID zu erhalten.",
 )
 def find_customer_capa(
@@ -47,6 +48,7 @@ def find_customer_capa(
 
 @mcp.tool(
     name="show_customers",
+    title="Alle Kunden abrufen",
     description="Rufe dieses Tool auf, um eine Liste der Kunden und ihrer IDs zu erhalten.",
 )
 def show_customers_capa() -> Structured:
@@ -59,6 +61,7 @@ def show_customers_capa() -> Structured:
 
 @mcp.tool(
     name="show_products",
+    title="Alle Produkte abrufen",
     description="Zeige Produkte an. Nutze dieses Tool, um eine Übersicht über alle Produkte, deren Preise und Lagerbestände zu erhalten.",
 )
 def show_products_capa() -> Structured:
@@ -68,6 +71,7 @@ def show_products_capa() -> Structured:
 
 @mcp.tool(
     name="show_low_stock_products",
+    title="Mangelbestände anzeigen",
     description="Zeige Produkte an, deren Lagerbestand unter dem Mindestbestand liegt.",
 )
 def show_low_stock_products_capa() -> Structured:
@@ -78,6 +82,7 @@ def show_low_stock_products_capa() -> Structured:
 
 @mcp.tool(
     name="show_open_orders_for_product",
+    title="Offene Bestellungen pro Produkt",
     description="Zeige offene (beauftragte) Bestellungen für ein bestimmtes Produkt.",
 )
 def show_open_orders_for_product_capa(
@@ -92,6 +97,7 @@ def show_open_orders_for_product_capa(
 
 @mcp.tool(
     name="show_auftraege_for_customer",
+    title="Aufträge Kunde anzeigen",
     description="Zeige alle Aufträge (Bestellung + Rechnung) eines Kunden an, inklusive Produktname und Status.",
 )
 def show_auftraege_for_customer_capa(
@@ -110,6 +116,7 @@ def show_auftraege_for_customer_capa(
 
 @mcp.tool(
     name="show_unpaid_auftraege",
+    title="Unbezahlte Aufträge anzeigen",
     description="Zeige unbezahlte Rechnungen an. Nutze dieses Tool, um eine Übersicht über alle Aufträge (Bestellung + Rechnung) mit unbezahlten Rechnungen zu erhalten.",
 )
 def show_unpaid_auftraege_capa() -> Structured:
@@ -120,6 +127,7 @@ def show_unpaid_auftraege_capa() -> Structured:
 
 @mcp.tool(
     name="show_unpaid_auftraege_for_customer",
+    title="Unbezahlte Aufträge Kunde anzeigen",
     description="Dieses Tool liefert für die ID eines Kunden dessen Aufträge (Bestellung + Rechnung) mit unbezahlten Rechnungen.",
 )
 def show_unpaid_auftraege_for_customer_capa(
@@ -137,11 +145,23 @@ def show_unpaid_auftraege_for_customer_capa(
     return result
 
 
+@mcp.tool(
+    name="show_rejected_orders",
+    title="Abgelehnte Bestellungen anzeigen",
+    description="Zeige alle abgelehnten Bestellungen an. Bestellungen werden abgelehnt, wenn der Lagerbestand nicht ausreicht. Diese können nach einer Bestandsauffüllung erneut geprüft werden.",
+)
+def show_rejected_orders_capa() -> Structured:
+    """Tool, um abgelehnte Bestellungen anzuzeigen."""
+    result: Structured = db.show_rejected_orders()
+    return result
+
+
 ########################## REVENUE ANALYSIS ##########################
 
 
 @mcp.tool(
     name="get_revenue_view_schema",
+    title="DB-Schema Umsatzanalyse-View abrufen",
     description="Gibt das Schema und die Query-Anweisungen für die Umsatzanalyse-View zurück. Rufe dieses Tool ZUERST auf, bevor du eine Umsatz-Query formulierst.",
 )
 def get_revenue_view_schema_capa() -> Structured:
@@ -152,6 +172,7 @@ def get_revenue_view_schema_capa() -> Structured:
 
 @mcp.tool(
     name="execute_revenue_query",
+    title="Umsatzanalyse-Query ausführen",
     description="Führt eine SQL-Query gegen die Umsatzanalyse-View aus. Vorher MUSS get_revenue_view_schema aufgerufen worden sein, um das Schema zu kennen.",
 )
 def execute_revenue_query_capa(
