@@ -64,9 +64,11 @@ class DatabaseCapabilities:
     def _to_structured(self, query_result: QueryResult) -> Structured:
         """Convert a QueryResult to a Structured response, keyed by row id."""
         if isinstance(query_result, list):
-            data: dict[str, Any] = {
-                str(i + 1): row for i, row in enumerate(query_result)
-            }
+            data: dict[str, Any]
+            if len(query_result) == 0:
+                data = {"1": "Query executed successfully, but returned no results."}
+            else:
+                data = {str(i + 1): row for i, row in enumerate(query_result)}
         elif isinstance(query_result, dict):
             data = query_result
         else:
