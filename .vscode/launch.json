@@ -2,11 +2,24 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "BirdParadiseMCPServer (module)",
+      "name": "Run mcp-server (read)",
       "type": "python",
       "python": "${workspaceFolder}/.venv/Scripts/python.exe",
       "request": "launch",
-      "module": "mcp_server.bird_paradise_server",
+      "module": "mcp_server.bird_paradise_read_server",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}"
+      }
+    },
+    {
+      "name": "Run mcp-server (write)",
+      "type": "python",
+      "python": "${workspaceFolder}/.venv/Scripts/python.exe",
+      "request": "launch",
+      "module": "mcp_server.bird_paradise_write_server",
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
       "justMyCode": true,
