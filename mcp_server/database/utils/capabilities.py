@@ -9,7 +9,8 @@ Row = dict[str, Any]
 Status = dict[str, str]
 QueryResult = list[Row] | Status | None
 
-
+EMPTY_RETURN = "Es wurden keine Daten gefunden, die den Kriterien entsprechen."
+ERROR_RETURN = "Es ist ein Fehler aufgetreten. Bitte überprüfe die Eingaben und versuche es erneut."
 class Structured(BaseModel):
     data: dict[str, Any]
 
@@ -63,16 +64,15 @@ class DatabaseCapabilities:
 
     def _to_structured(self, query_result: QueryResult) -> Structured:
         """Convert a QueryResult to a Structured response, keyed by row id."""
+        data: dict[str, Any]
         if isinstance(query_result, list):
-            data: dict[str, Any]
-            if len(query_result) == 0:
-                data = {"1": "Query executed successfully, but returned no results."}
-            else:
-                data = {str(i + 1): row for i, row in enumerate(query_result)}
+            data = {str(i + 1): row for i, row in enumerate(query_result)}
+            if len(list(data.keys())) == 0:
+                data = {"1": EMPTY_RETURN}
         elif isinstance(query_result, dict):
             data = query_result
         else:
-            data = {"error": "Query returned no result."}
+            data = {"1": ERROR_RETURN}
         return Structured(data=data)
 
     ########################## CUSTOMERS ##########################
@@ -190,7 +190,7 @@ class DatabaseCapabilities:
         query_result = self._make_query(query)
         return self._to_structured(query_result)
 
-    ########################## ORDERS ##########################
+    ########################## AUFTRÄGE ##########################
 
     def create_order(
         self, customer_id: int, product_id: int, quantity: int
@@ -207,8 +207,8 @@ class DatabaseCapabilities:
         query_result = self._make_query(query)
         return self._to_structured(query_result)
 
-    def show_orders_for_customer(self, customer_id: int) -> Structured:
-        """Show all orders for a customer, including invoice info."""
+    def show_auftraege_for_customer(self, customer_id: int) -> Structured:
+        """Show all Aufträge (order + invoice records) for a customer."""
         query = f"""
             SELECT a.*, p.name AS produkt_name
             FROM vw_0Aufträge a
@@ -230,10 +230,10 @@ class DatabaseCapabilities:
         query_result = self._make_query(select_query)
         return self._to_structured(query_result)
 
-    ########################## INVOICES ##########################
+    ########################## AUFTRÄGE (UNBEZAHLT / DETAILS) ##########################
 
-    def show_unpaid_invoices(self) -> Structured:
-        """Get a list of unpaid and overdue invoices."""
+    def show_unpaid_auftraege(self) -> Structured:
+        """Get a list of unpaid and overdue Aufträge."""
         query = """
             SELECT a.*, p.name AS produkt_name
             FROM vw_0Aufträge a
@@ -244,14 +244,26 @@ class DatabaseCapabilities:
         result = self._to_structured(query_result)
         return result
 
-    def show_unpaid_invoices_for_customer(self, customer_id: int) -> Structured:
-        """Get unpaid/overdue invoices for a specific customer."""
+    def show_unpaid_auftraege_for_customer(self, customer_id: int) -> Structured:
+        """Get unpaid/overdue Aufträge for a specific customer."""
         query = f"""
             SELECT a.*, p.name AS produkt_name
             FROM vw_0Aufträge a
             JOIN products p ON a.Produkt_ID = p.id
             WHERE a.Kunden_ID = {customer_id}
               AND (a.Rechnungsstatus LIKE '%unpaid%' OR a.Rechnungsstatus LIKE '%overdue%')"""
+        query_result = self._make_query(query)
+        result = self._to_structured(query_result)
+        return result
+
+    def show_auftrag_by_invoice_id(self, invoice_id: int) -> Structured:
+        """Get an Auftrag (order + invoice record) by invoice id."""
+        query = f"""
+        SELECT a.Bestellstatus, a.Auftragseingang, a.Kunden_ID, a.Produkt_ID, a.Bestellmenge, a.Rechnungs_ID, a.Umsatz, a.rabattierter_Umsatz, a.Mahngebühr, a.Zahlungsfrist, a.Zahltag, a.Rechnungsstatus, a.Status_Auftrag, p.name as produkt_name
+        FROM vw_0Aufträge a
+        JOIN products p ON a.Produkt_id = p.id
+        WHERE Rechnungs_ID = {invoice_id} 
+        """
         query_result = self._make_query(query)
         result = self._to_structured(query_result)
         return result
@@ -270,17 +282,6 @@ class DatabaseCapabilities:
             JOIN products p ON a.Produkt_ID = p.id
             WHERE a.Rechnungs_ID = {invoice_id}"""
         query_result = self._make_query(select_query)
-        return self._to_structured(query_result)
-
-    def show_invoices_for_customer(self, customer_id: int) -> Structured:
-        """Show all invoices for a customer, including product and order info."""
-        query = f"""
-            SELECT a.*, p.name AS produkt_name
-            FROM vw_0Aufträge a
-            JOIN products p ON a.Produkt_ID = p.id
-            WHERE a.Kunden_ID = {customer_id}
-            ORDER BY a.Auftragseingang DESC"""
-        query_result = self._make_query(query)
         return self._to_structured(query_result)
 
     ########################## REVENUE ANALYSIS ##########################

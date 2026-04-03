@@ -88,13 +88,13 @@ def show_open_orders_for_product_capa(
     return result
 
 
-########################## ORDERS ##########################
+########################## AUFTRÄGE ##########################
 
 @mcp.tool(
-    name="show_orders_for_customer",
-    description="Zeige alle Aufträge (Bestellungen) eines Kunden an, inklusive Produktname und Status.",
+    name="show_auftraege_for_customer",
+    description="Zeige alle Aufträge (Bestellung + Rechnung) eines Kunden an, inklusive Produktname und Status.",
 )
-def show_orders_for_customer_capa(
+def show_auftraege_for_customer_capa(
     customer_id: Annotated[
         int,
         Field(
@@ -104,56 +104,36 @@ def show_orders_for_customer_capa(
     ],
 ) -> Structured:
     """Tool, um alle Aufträge eines Kunden anzuzeigen."""
-    result: Structured = db.show_orders_for_customer(customer_id)
-    return result
-
-
-########################## INVOICES ##########################
-
-
-@mcp.tool(
-    name="show_unpaid_invoices",
-    description="Zeige unbezahlte Rechnungen an. Nutze dieses Tool, um eine Übersicht über alle unbezahlten Rechnungen zu erhalten.",
-)
-def show_unpaid_invoices_capa() -> Structured:
-    """Tool, um unbezahlte Rechnungen anzuzeigen."""
-    result: Structured = db.show_unpaid_invoices()
+    result: Structured = db.show_auftraege_for_customer(customer_id)
     return result
 
 
 @mcp.tool(
-    name="show_unpaid_invoices_for_customer",
-    description="Dieses Tool liefert für die ID eines Kunden dessen unbezahlte Rechnungen.",
+    name="show_unpaid_auftraege",
+    description="Zeige unbezahlte Rechnungen an. Nutze dieses Tool, um eine Übersicht über alle Aufträge (Bestellung + Rechnung) mit unbezahlten Rechnungen zu erhalten.",
 )
-def show_unpaid_invoices_for_customer_capa(
+def show_unpaid_auftraege_capa() -> Structured:
+    """Tool, um unbezahlte Aufträge anzuzeigen."""
+    result: Structured = db.show_unpaid_auftraege()
+    return result
+
+
+@mcp.tool(
+    name="show_unpaid_auftraege_for_customer",
+    description="Dieses Tool liefert für die ID eines Kunden dessen Aufträge (Bestellung + Rechnung) mit unbezahlten Rechnungen.",
+)
+def show_unpaid_auftraege_for_customer_capa(
     customer_id: Annotated[
         int,
         Field(
             ...,
-            description="""Kunden-ID. 
+            description="""Kunden-ID.
             Muss vom Nutzer bei der Anfrage angegeben werden (ganzzahlig). Wenn nicht gegeben, erfragen.""",
         ),
     ],
 ) -> Structured:
-    """Tool, um unbezahlte Rechnungen eines bestimmten Kunden anzuzeigen."""
-    result: Structured = db.show_unpaid_invoices_for_customer(customer_id)
-    return result
-
-@mcp.tool(
-    name="show_invoices_for_customer",
-    description="Zeige alle Rechnungen eines Kunden an, inklusive Produktname und Auftragsnummer.",
-)
-def show_invoices_for_customer_capa(
-    customer_id: Annotated[
-        int,
-        Field(
-            ...,
-            description="Kunden-ID. Muss vom Nutzer angegeben werden. Wenn nicht gegeben, erfragen.",
-        ),
-    ],
-) -> Structured:
-    """Tool, um alle Rechnungen eines Kunden anzuzeigen."""
-    result: Structured = db.show_invoices_for_customer(customer_id)
+    """Tool, um unbezahlte Aufträge eines bestimmten Kunden anzuzeigen."""
+    result: Structured = db.show_unpaid_auftraege_for_customer(customer_id)
     return result
 
 
