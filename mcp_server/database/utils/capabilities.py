@@ -9,8 +9,12 @@ Row = dict[str, Any]
 Status = dict[str, str]
 QueryResult = list[Row] | Status | None
 
-EMPTY_RETURN = "Es wurden keine Daten gefunden, die den Kriterien entsprechen."
-ERROR_RETURN = "Es ist ein Fehler aufgetreten. Bitte überprüfe die Eingaben und versuche es erneut."
+EMPTY_RETURN = {
+    "Ungültige Anfrage oder keine Daten gefunden": "Es wurden keine Daten gefunden, die den Kriterien entsprechen."
+}
+ERROR_RETURN = {
+    "Fehler": "Es ist ein Fehler aufgetreten. Bitte überprüfe die Eingaben und versuche es erneut."
+}
 class Structured(BaseModel):
     data: dict[str, Any]
 
