@@ -250,7 +250,11 @@ class DatabaseCapabilities:
             INSERT INTO products (name, description, category_id, purchase_price, sale_price, supplier_id)
             VALUES (N'{name}', N'{description}', {category_id},
                     {purchase_price}, {sale_price}, {supplier_id});
-            SELECT * FROM products WHERE id = SCOPE_IDENTITY();"""
+            DECLARE @new_product_id INT = SCOPE_IDENTITY();
+            INSERT INTO inventory (product_id, storage_location_id, stock, min_stock)
+            SELECT @new_product_id, sl.id, 0, ABS(CHECKSUM(NEWID())) % 13 + 3
+            FROM inventory_storagelocations sl;
+            SELECT * FROM products WHERE id = @new_product_id;"""
         query_result = self._make_query(query)
         return self._to_structured(query_result)
 
@@ -343,6 +347,40 @@ class DatabaseCapabilities:
             WHERE a.Kunden_ID = {customer_id}
             ORDER BY a.Auftragseingang DESC"""
         query_result = self._make_query(query)
+        return self._to_structured(query_result)
+
+    def search_auftrag(
+        self,
+        customer_id: int | None = None,
+        order_id: int | None = None,
+        invoice_id: int | None = None,
+    ) -> Structured:
+        """Search Aufträge by customer_id, order_id, or invoice_id."""
+        query = """
+            SELECT a.*, p.name AS produkt_name
+            FROM vw_0Aufträge a
+            JOIN products p ON a.Produkt_ID = p.id
+            WHERE 1=1
+        """
+        params: dict[str, int] = {}
+
+        if customer_id is not None:
+            query += " AND a.Kunden_ID = %(customer_id)s"
+            params["customer_id"] = customer_id
+        if order_id is not None:
+            query += " AND a.Bestell_ID = %(order_id)s"
+            params["order_id"] = order_id
+        if invoice_id is not None:
+            query += " AND a.Rechnungs_ID = %(invoice_id)s"
+            params["invoice_id"] = invoice_id
+
+        if not params:
+            raise ValueError(
+                "Mindestens ein Suchparameter (customer_id, order_id oder invoice_id) muss angegeben werden."
+            )
+
+        query += " ORDER BY a.Auftragseingang DESC"
+        query_result = self._make_query(query, procedure=True, params=params)
         return self._to_structured(query_result)
 
     def retry_rejected_order(self, order_id: int) -> Structured:

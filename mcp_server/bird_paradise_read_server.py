@@ -136,6 +136,28 @@ def show_open_orders_for_product_capa(
 ########################## AUFTRÄGE ##########################
 
 @mcp.tool(
+    name="search_auftrag",
+    title="Auftrag suchen",
+    description="""Suche nach Aufträgen (Bestellung + Rechnung) anhand von Kunden-ID, Bestell-ID oder Rechnungs-ID.
+    Mindestens ein Suchparameter muss angegeben werden. Mehrere können kombiniert werden.""",
+)
+def search_auftrag_capa(
+    customer_id: Annotated[
+        int | None, Field(None, description="Optional: Kunden-ID")
+    ] = None,
+    order_id: Annotated[
+        int | None, Field(None, description="Optional: Bestell-ID")
+    ] = None,
+    invoice_id: Annotated[
+        int | None, Field(None, description="Optional: Rechnungs-ID")
+    ] = None,
+) -> Structured:
+    """Tool, um Aufträge nach Kunden-ID, Bestell-ID oder Rechnungs-ID zu suchen."""
+    result: Structured = db.search_auftrag(customer_id, order_id, invoice_id)
+    return result
+
+
+@mcp.tool(
     name="show_auftraege_for_customer",
     title="Aufträge Kunde anzeigen",
     description="Zeige alle Aufträge (Bestellung + Rechnung) eines Kunden an, inklusive Produktname und Status.",
