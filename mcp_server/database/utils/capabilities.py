@@ -213,6 +213,11 @@ class DatabaseCapabilities:
         """
         search_words = search_text.split() if search_text else []
 
+        if category_id and category_id not in [1, 2, 3, 4]:
+            raise ValueError(
+                "Invalid category_id. Valid values are 1, 2, 3, or 4. 1 = Nahrungsmittel, 2 = Käfig und Zubehör, 3 = Spielzeug, 4 = Medizinische Produkte."
+            )
+
         params: dict[str, int | str] = {}
 
         if product_id is not None:

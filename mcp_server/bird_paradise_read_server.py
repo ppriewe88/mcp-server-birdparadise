@@ -34,15 +34,26 @@ db = DatabaseCapabilities()
 ########################## CUSTOMERS ##########################
 
 @mcp.tool(
-    name="find_customer",
-    title="Kunde abrufen",
-    description="Rufe dieses Tool auf, um Informationen über einen Kunden anhand seiner ID zu erhalten.",
+    name="search_customer",
+    title="Kunde suchen",
+    description="Rufe dieses Tool auf, um Informationen über einen Kunden anhand seiner ID oder einem Suchtext zu erhalten.",
 )
-def find_customer_capa(
-    customer_id: Annotated[int, Field(..., description="Kunden-ID, z.B. 123")],
+def search_customer_capa(
+    customer_id: Annotated[
+        int | None, Field(None, description="Optional: Kunden-ID, z.B. 5")
+    ] = None,
+    search_text: Annotated[
+        str | None,
+        Field(
+            None,
+            description="""Optional: Suchtext für Kundennamen oder Stadt.
+            Suchtext besteht idealerweise aus EINEM Wort (kann aber auch mehrere beinhalten).
+            Es wird nach Übereinstimmungen in Kundennamen und Städten gesucht.""",
+        ),
+    ] = None,
 ) -> Structured:
-    """Tool, um Informationen über einen Kunden anhand seiner ID zu erhalten."""
-    result: Structured = db.find_customer(customer_id)
+    """Tool, um Informationen über einen Kunden anhand seiner ID oder einem Suchtext zu erhalten."""
+    result: Structured = db.search_customer(customer_id, search_text)
     return result
 
 
@@ -68,6 +79,42 @@ def show_products_capa() -> Structured:
     """Tool, um Produkte anzuzeigen."""
     result: Structured = db.show_products()
     return result
+
+@mcp.tool(
+    name="search_product",
+    title="Produkt suchen",
+    description="Rufe dieses Tool auf, um Informationen über ein Produkt anhand seiner ID oder einem Suchtext zu erhalten.",
+)
+def search_product_capa(
+    product_id: Annotated[
+        int | None, Field(None, description="Optional: Produkt-ID, z.B. 5")
+    ],
+    search_text: Annotated[
+        str | None,
+        Field(
+            None,
+            description="""Optional: Suchtext für Produktname oder Beschreibung.
+            Suchtext besteht idealerweise aus EINEM Wort (kann aber auch mehrere beinhalten).
+            Es wird nach Übereinstimmungen in Produktnamen und -beschreibung gesucht.""",
+        ),
+    ],
+    category_id: Annotated[
+        int | None,
+        Field(
+            None,
+            description="""Optional: Kategorie-ID, zu wählen aus 1, 2, 3 oder 4.
+            1 = Nahrungsmittel, 2 = Käfig und Zubehör, 3 = Spielzeug, 4 = Medizinische Produkte.""",
+        ),
+    ],
+) -> Structured:
+    """Tool, um Informationen über ein Produkt zu erhalten."""
+    if not product_id and not search_text and not category_id:
+        raise ValueError(
+            "Invalid input. Please provide either product_id, search_text, or category_id."
+        )
+    result: Structured = db.search_product(product_id, search_text, category_id)
+    return result
+
 
 @mcp.tool(
     name="show_low_stock_products",
