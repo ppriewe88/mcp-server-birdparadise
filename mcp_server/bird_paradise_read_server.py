@@ -66,28 +66,8 @@ def search_customer_capa(
     return result
 
 
-@mcp.tool(
-    name="show_customers",
-    title="Alle Kunden abrufen",
-    description="Rufe dieses Tool auf, um eine Liste der Kunden und ihrer IDs zu erhalten.",
-)
-def show_customers_capa() -> Structured:
-    """Tool, um eine Liste der Kunden und ihrer IDs zu erhalten."""
-    result: Structured = db.show_customers()
-    return result
-
 ########################## PRODUCTS ##########################
 
-
-@mcp.tool(
-    name="show_products",
-    title="Alle Produkte abrufen",
-    description="Zeige Produkte an. Nutze dieses Tool, um eine Übersicht über alle Produkte, deren Preise und Lagerbestände zu erhalten.",
-)
-def show_products_capa() -> Structured:
-    """Tool, um Produkte anzuzeigen."""
-    result: Structured = db.show_products()
-    return result
 
 @mcp.tool(
     name="search_product",

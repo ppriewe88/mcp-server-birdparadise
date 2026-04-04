@@ -114,12 +114,6 @@ class DatabaseCapabilities:
         query_result = self._make_query(query)
         return self._to_structured(query_result)
 
-    def find_customer(self, customer_id: int) -> Structured:
-        """Get customer entry by id."""
-        query = f"SELECT * FROM customers WHERE id = {customer_id}"
-        query_result = self._make_query(query)
-        return self._to_structured(query_result)
-
     def search_customer(
         self,
         customer_id: int | None = None,
@@ -171,26 +165,7 @@ class DatabaseCapabilities:
         query_result = self._make_query(query, procedure=True, params=params)
         return self._to_structured(query_result)
 
-    def show_customers(self) -> Structured:
-        """Get a list of customers with their IDs."""
-        query = "SELECT id, name FROM customers"
-        query_result = self._make_query(query)
-        result = self._to_structured(query_result)
-        return result
-
     ########################## PRODUCTS ##########################
-
-    def show_products(self) -> Structured:
-        """Get a list of products with prices and inventory."""
-        query = """
-            SELECT p.id, p.name, p.sale_price, p.description,
-                i.stock, i.min_stock, invsl.name AS storage
-            FROM products p
-            JOIN inventory i ON i.product_id = p.id
-            JOIN inventory_storagelocations invsl ON invsl.id = i.storage_location_id"""
-        query_result = self._make_query(query)
-        result = self._to_structured(query_result)
-        return result
 
     def search_product(
         self,
@@ -306,10 +281,15 @@ class DatabaseCapabilities:
             SET stock = min_stock + 10
             WHERE stock < min_stock;"""
         self._make_query(query)
-        return Structured(data={
-            "status": "success",
-            "message": "Alle Produkte wurden wieder auf 10 Stück über Mindestbestand aufgefüllt.",
-        })
+        result = self._to_structured(
+            [
+                {
+                    "status": "success",
+                    "message": "Alle Produkte wurden wieder auf 10 Stück über Mindestbestand aufgefüllt.",
+                }
+            ]
+        )
+        return result
 
     def show_low_stock_products(self) -> Structured:
         """Show products where current stock is below min_stock."""
@@ -378,21 +358,34 @@ class DatabaseCapabilities:
         return self._to_structured(query_result)
 
     def retry_all_rejected_orders(self) -> Structured:
-        """Re-check all rejected orders for commission."""
-        result = self.show_rejected_orders()
-        rows = result.data
-        if "1" not in rows or "Ungültige Anfrage" in str(rows.get("1", "")):
-            return Structured(data={
-                "status": "info",
-                "message": "Es gibt keine abgelehnten Bestellungen zum Nachbearbeiten.",
-            })
-        for row in rows.values():
-            proc_query = "EXEC spCheckExistingOrderForCommission @orderID_checkforcomm = %s"
-            self._make_query(proc_query, procedure=True, params=row["order_id"])
-        return Structured(data={
-            "status": "success",
-            "message": f"{len(rows)} abgelehnte Bestellung(en) wurden erneut geprüft und nachbearbeitet.",
-        })
+        """Re-check all rejected orders for commission via server-side cursor."""
+        query = """
+            DECLARE @oid INT, @cnt INT = 0;
+            DECLARE cur CURSOR LOCAL FAST_FORWARD FOR
+                SELECT o.id FROM orders o
+                JOIN orders_status os ON os.id = o.status_id
+                WHERE os.name LIKE '%abgelehnt%';
+            OPEN cur;
+            FETCH NEXT FROM cur INTO @oid;
+            WHILE @@FETCH_STATUS = 0
+            BEGIN
+                EXEC spCheckExistingOrderForCommission @orderID_checkforcomm = @oid;
+                SET @cnt = @cnt + 1;
+                FETCH NEXT FROM cur INTO @oid;
+            END
+            CLOSE cur;
+            DEALLOCATE cur;
+            SELECT @cnt AS anzahl;"""
+        query_result = self._make_query(query)
+        if isinstance(query_result, list) and query_result:
+            cnt = query_result[0].get("anzahl", 0)
+        else:
+            cnt = 0
+        if cnt == 0:
+            msg = "Es gibt keine abgelehnten Bestellungen zum Nachbearbeiten."
+        else:
+            msg = f"{cnt} abgelehnte Bestellung(en) wurden erneut geprüft und nachbearbeitet."
+        return self._to_structured([{"status": "success", "message": msg}])
 
     def show_rejected_orders(self) -> Structured:
         """Show all rejected orders (status 'abgelehnt')."""
@@ -427,21 +420,34 @@ class DatabaseCapabilities:
         return result
 
     def pay_all_unpaid_invoices(self) -> Structured:
-        """Pay all unpaid/overdue invoices."""
-        result = self.show_unpaid_auftraege()
-        rows = result.data
-        if "1" not in rows or "Ungültige Anfrage" in str(rows.get("1", "")):
-            return Structured(data={
-                "status": "info",
-                "message": "Es gibt keine unbezahlten Rechnungen.",
-            })
-        for row in rows.values():
-            proc_query = "EXEC spChangeInvoiceStatusAndCheckDiscount @invoiceID = %s, @newStatusID = 2"
-            self._make_query(proc_query, procedure=True, params=row["Rechnungs_ID"])
-        return Structured(data={
-            "status": "success",
-            "message": f"{len(rows)} Rechnung(en) wurden bezahlt.",
-        })
+        """Pay all unpaid/overdue invoices via server-side cursor."""
+        query = """
+            DECLARE @iid INT, @cnt INT = 0;
+            DECLARE cur CURSOR LOCAL FAST_FORWARD FOR
+                SELECT i.id FROM invoices i
+                JOIN invoices_status invs ON invs.id = i.status_id
+                WHERE invs.name LIKE '%unpaid%' OR invs.name LIKE '%overdue%';
+            OPEN cur;
+            FETCH NEXT FROM cur INTO @iid;
+            WHILE @@FETCH_STATUS = 0
+            BEGIN
+                EXEC spChangeInvoiceStatusAndCheckDiscount @invoiceID = @iid, @newStatusID = 2;
+                SET @cnt = @cnt + 1;
+                FETCH NEXT FROM cur INTO @iid;
+            END
+            CLOSE cur;
+            DEALLOCATE cur;
+            SELECT @cnt AS anzahl;"""
+        query_result = self._make_query(query)
+        if isinstance(query_result, list) and query_result:
+            cnt = query_result[0].get("anzahl", 0)
+        else:
+            cnt = 0
+        if cnt == 0:
+            msg = "Es gibt keine unbezahlten Rechnungen."
+        else:
+            msg = f"{cnt} Rechnung(en) wurden bezahlt."
+        return self._to_structured([{"status": "success", "message": msg}])
 
     def show_unpaid_auftraege_for_customer(self, customer_id: int) -> Structured:
         """Get unpaid/overdue Aufträge for a specific customer."""
@@ -451,18 +457,6 @@ class DatabaseCapabilities:
             JOIN products p ON a.Produkt_ID = p.id
             WHERE a.Kunden_ID = {customer_id}
               AND (a.Rechnungsstatus LIKE '%unpaid%' OR a.Rechnungsstatus LIKE '%overdue%')"""
-        query_result = self._make_query(query)
-        result = self._to_structured(query_result)
-        return result
-
-    def show_auftrag_by_invoice_id(self, invoice_id: int) -> Structured:
-        """Get an Auftrag (order + invoice record) by invoice id."""
-        query = f"""
-        SELECT a.Bestellstatus, a.Auftragseingang, a.Kunden_ID, a.Produkt_ID, a.Bestellmenge, a.Rechnungs_ID, a.Umsatz, a.rabattierter_Umsatz, a.Mahngebühr, a.Zahlungsfrist, a.Zahltag, a.Rechnungsstatus, a.Status_Auftrag, p.name as produkt_name
-        FROM vw_0Aufträge a
-        JOIN products p ON a.Produkt_id = p.id
-        WHERE Rechnungs_ID = {invoice_id} 
-        """
         query_result = self._make_query(query)
         result = self._to_structured(query_result)
         return result

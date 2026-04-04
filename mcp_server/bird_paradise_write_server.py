@@ -124,6 +124,9 @@ def restock_all_low_stock_capa() -> Structured:
     return result
 
 
+########################## ORDERS ##########################
+
+
 @mcp.tool(
     name="pay_all_unpaid_invoices",
     title="Alle unbezahlten Rechnungen bezahlen",
@@ -144,9 +147,6 @@ def retry_all_rejected_orders_capa() -> Structured:
     """Tool, um alle abgelehnten Bestellungen erneut zu prüfen."""
     result: Structured = db.retry_all_rejected_orders()
     return result
-
-
-########################## ORDERS ##########################
 
 
 @mcp.tool(
