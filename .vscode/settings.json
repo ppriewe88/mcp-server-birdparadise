@@ -48,5 +48,7 @@
   },
   // spell correction
   "cSpell.enabled": false,
-  "workbench.colorTheme": "Default Dark Modern"
+  "workbench.colorTheme": "Dark Modern",
+  "python-envs.defaultEnvManager": "ms-python.python:poetry",
+  "python-envs.defaultPackageManager": "ms-python.python:poetry"
 }
