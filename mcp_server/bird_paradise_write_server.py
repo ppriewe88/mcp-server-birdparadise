@@ -164,7 +164,7 @@ def retry_rejected_order_capa(
             description="Bestell-ID der abgelehnten Bestellung. Muss vom Nutzer angegeben werden. Wenn nicht gegeben, erfragen.",
         ),
     ],
-) -> Structured | str:
+) -> Structured:
     """Tool, um eine abgelehnte Bestellung erneut zu prüfen."""
     result: Structured = db.retry_rejected_order(order_id)
     return result
