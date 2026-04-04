@@ -1,3 +1,4 @@
+import re
 from typing import Any
 
 from pydantic import BaseModel
@@ -81,6 +82,14 @@ class DatabaseCapabilities:
             data = {"1": ERROR_RETURN}
         return Structured(data=data)
 
+    def _normalize_search_text(self, text: str) -> list[str]:
+        """Normalize search text for SQL LIKE queries."""
+        text = text.casefold().strip()
+        text = re.sub(r"[^\w\s]", " ", text)
+        text = text.replace("_", " ")
+        text = re.sub(r"\s+", " ", text).strip()
+        return [token for token in text.split(" ") if token]
+
     ########################## CUSTOMERS ##########################
 
     def create_customer(
@@ -111,6 +120,57 @@ class DatabaseCapabilities:
         query_result = self._make_query(query)
         return self._to_structured(query_result)
 
+    def search_customer(
+        self,
+        customer_id: int | None = None,
+        search_text: str | None = None,
+        city: str | None = None,
+    ) -> Structured:
+        """Search customers by id, free-text name tokens, or city."""
+        query = """
+            SELECT
+                c.id,
+                c.name,
+                c.email,
+                c.city,
+                c.address,
+                c.country,
+                c.discount
+            FROM customers c
+            WHERE 1 = 1
+        """
+
+        params: dict[str, int | str] = {}
+
+        if customer_id is not None:
+            query += " AND c.id = %(customer_id)s"
+            params["customer_id"] = customer_id
+
+        if city:
+            query += " AND c.city LIKE %(city)s"
+            params["city"] = f"%{city.strip()}%"
+
+        if search_text:
+            search_words = self._normalize_search_text(search_text)
+
+            if search_words:
+                or_conditions: list[str] = []
+
+                for idx, word in enumerate(search_words):
+                    param_name = f"search_word_{idx}"
+                    or_conditions.append(f"c.name LIKE %({param_name})s")
+                    params[param_name] = f"%{word}%"
+
+                query += " AND (" + " OR ".join(or_conditions) + ")"
+
+        if not params:
+            raise ValueError(
+                "At least one search parameter (customer_id, search_text, or city) must be provided."
+            )
+
+        query_result = self._make_query(query, procedure=True, params=params)
+        return self._to_structured(query_result)
+
     def show_customers(self) -> Structured:
         """Get a list of customers with their IDs."""
         query = "SELECT id, name FROM customers"
@@ -131,6 +191,62 @@ class DatabaseCapabilities:
         query_result = self._make_query(query)
         result = self._to_structured(query_result)
         return result
+
+    def search_product(
+        self,
+        product_id: int | None = None,
+        search_text: str | None = None,
+        category_id: int | None = None,
+    ) -> Structured:
+        """Search products by id, name/description (contains) or category_id."""
+        query = """
+            SELECT
+                p.id,
+                p.name,
+                p.description,
+                p.category_id,
+                c.name AS Warengruppe
+            FROM products p
+            JOIN category c
+                ON p.category_id = c.id
+            WHERE 1=1
+        """
+        search_words = search_text.split() if search_text else []
+
+        params: dict[str, int | str] = {}
+
+        if product_id is not None:
+            query += " AND p.id = %(product_id)s"
+            params["product_id"] = product_id
+        if category_id is not None:
+            query += " AND p.category_id = %(category_id)s"
+            params["category_id"] = category_id
+        if search_text:
+            search_words = self._normalize_search_text(search_text)
+
+            if search_words:
+                or_conditions: list[str] = []
+
+                for idx, word in enumerate(search_words):
+                    param_name = f"search_word_{idx}"
+                    or_conditions.append(
+                        f"""
+                        p.name LIKE %({param_name})s
+                        OR ISNULL(p.description, '') LIKE %({param_name})s
+                        OR c.name LIKE %({param_name})s
+                        """
+                    )
+                    params[param_name] = f"%{word}%"
+
+                query += " AND (" + " OR ".join(or_conditions) + ")"
+
+        if not params:
+            raise ValueError(
+                "At least one search parameter (product_id, search_text, or category_id) must be provided."
+            )
+
+        query_result = self._make_query(query, procedure=True, params=params)
+        return self._to_structured(query_result)
 
     def create_product(
         self,
