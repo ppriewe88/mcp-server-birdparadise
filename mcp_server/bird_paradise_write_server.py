@@ -113,6 +113,39 @@ def restock_inventory_capa(
     return result
 
 
+@mcp.tool(
+    name="restock_all_low_stock",
+    title="Alle kritischen Lagerbestände auffüllen",
+    description="Füllt automatisch alle Lagerbestände auf, bei denen der aktuelle Bestand unter dem Mindestbestand liegt. Der Bestand wird jeweils auf Mindestbestand + 10 gesetzt. Benötigt keine Eingabe.",
+)
+def restock_all_low_stock_capa() -> Structured:
+    """Tool, um alle Lagerbestände mit unterschrittenem Mindestbestand automatisch aufzufüllen."""
+    result: Structured = db.restock_all_low_stock()
+    return result
+
+
+@mcp.tool(
+    name="pay_all_unpaid_invoices",
+    title="Alle unbezahlten Rechnungen bezahlen",
+    description="Bezahlt automatisch alle offenen (unpaid/overdue) Rechnungen. Benötigt keine Eingabe.",
+)
+def pay_all_unpaid_invoices_capa() -> Structured:
+    """Tool, um alle unbezahlten Rechnungen auf einmal zu bezahlen."""
+    result: Structured = db.pay_all_unpaid_invoices()
+    return result
+
+
+@mcp.tool(
+    name="retry_all_rejected_orders",
+    title="Alle abgelehnten Bestellungen nachbearbeiten",
+    description="Prüft automatisch alle abgelehnten Bestellungen erneut (z.B. nachdem Lager aufgefüllt wurde). Benötigt keine Eingabe.",
+)
+def retry_all_rejected_orders_capa() -> Structured:
+    """Tool, um alle abgelehnten Bestellungen erneut zu prüfen."""
+    result: Structured = db.retry_all_rejected_orders()
+    return result
+
+
 ########################## ORDERS ##########################
 
 

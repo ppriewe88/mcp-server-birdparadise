@@ -204,7 +204,8 @@ class DatabaseCapabilities:
                 p.id,
                 p.name,
                 p.description,
-                p.category_id,
+                p.sale_price AS Verkaufspreis,
+                p.category_id AS Warengruppennummer,
                 c.name AS Warengruppe
             FROM products p
             JOIN category c
@@ -263,6 +264,13 @@ class DatabaseCapabilities:
         supplier_id: int,
     ) -> Structured:
         """Create a new product and return the created record."""
+        min_sale_price = round(purchase_price * 1.19, 2)
+        if sale_price < min_sale_price:
+            raise ValueError(
+                f"Verkaufspreis ({sale_price:.2f}) muss mindestens "
+                f"{min_sale_price:.2f} betragen (Einkaufspreis {purchase_price:.2f} × 1.19). "
+                f"Der Verkaufspreis muss die Mehrwertsteuer von 19% abdecken."
+            )
         query = f"""
             INSERT INTO products (name, description, category_id, purchase_price, sale_price, supplier_id)
             VALUES (N'{name}', N'{description}', {category_id},
@@ -290,6 +298,18 @@ class DatabaseCapabilities:
               AND i.storage_location_id = {storage_location_id};"""
         query_result = self._make_query(query)
         return self._to_structured(query_result)
+
+    def restock_all_low_stock(self) -> Structured:
+        """Restock all inventory entries where stock is below min_stock to min_stock + 10."""
+        query = """
+            UPDATE inventory
+            SET stock = min_stock + 10
+            WHERE stock < min_stock;"""
+        self._make_query(query)
+        return Structured(data={
+            "status": "success",
+            "message": "Alle Produkte wurden wieder auf 10 Stück über Mindestbestand aufgefüllt.",
+        })
 
     def show_low_stock_products(self) -> Structured:
         """Show products where current stock is below min_stock."""
@@ -357,6 +377,23 @@ class DatabaseCapabilities:
         query_result = self._make_query(select_query)
         return self._to_structured(query_result)
 
+    def retry_all_rejected_orders(self) -> Structured:
+        """Re-check all rejected orders for commission."""
+        result = self.show_rejected_orders()
+        rows = result.data
+        if "1" not in rows or "Ungültige Anfrage" in str(rows.get("1", "")):
+            return Structured(data={
+                "status": "info",
+                "message": "Es gibt keine abgelehnten Bestellungen zum Nachbearbeiten.",
+            })
+        for row in rows.values():
+            proc_query = "EXEC spCheckExistingOrderForCommission @orderID_checkforcomm = %s"
+            self._make_query(proc_query, procedure=True, params=row["order_id"])
+        return Structured(data={
+            "status": "success",
+            "message": f"{len(rows)} abgelehnte Bestellung(en) wurden erneut geprüft und nachbearbeitet.",
+        })
+
     def show_rejected_orders(self) -> Structured:
         """Show all rejected orders (status 'abgelehnt')."""
         query = """
@@ -388,6 +425,23 @@ class DatabaseCapabilities:
         query_result = self._make_query(query)
         result = self._to_structured(query_result)
         return result
+
+    def pay_all_unpaid_invoices(self) -> Structured:
+        """Pay all unpaid/overdue invoices."""
+        result = self.show_unpaid_auftraege()
+        rows = result.data
+        if "1" not in rows or "Ungültige Anfrage" in str(rows.get("1", "")):
+            return Structured(data={
+                "status": "info",
+                "message": "Es gibt keine unbezahlten Rechnungen.",
+            })
+        for row in rows.values():
+            proc_query = "EXEC spChangeInvoiceStatusAndCheckDiscount @invoiceID = %s, @newStatusID = 2"
+            self._make_query(proc_query, procedure=True, params=row["Rechnungs_ID"])
+        return Structured(data={
+            "status": "success",
+            "message": f"{len(rows)} Rechnung(en) wurden bezahlt.",
+        })
 
     def show_unpaid_auftraege_for_customer(self, customer_id: int) -> Structured:
         """Get unpaid/overdue Aufträge for a specific customer."""
