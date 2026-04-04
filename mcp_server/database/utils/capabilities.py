@@ -41,6 +41,7 @@ class DatabaseCapabilities:
 
             if cursor.description:
                 rows: list[Row] = cursor.fetchall()
+                connection.commit()
                 return rows
 
             try:
