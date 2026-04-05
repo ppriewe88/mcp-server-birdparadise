@@ -398,7 +398,14 @@ class DatabaseCapabilities:
     def retry_all_rejected_orders(self) -> Structured:
         """Re-check all rejected orders for commission via server-side cursor."""
         query = """
-            DECLARE @oid INT, @cnt INT = 0;
+            DECLARE @oid INT;
+            DECLARE @before INT, @after INT;
+
+            SELECT @before = COUNT(*)
+            FROM orders o
+            JOIN orders_status os ON os.id = o.status_id
+            WHERE os.name LIKE '%abgelehnt%';
+
             DECLARE cur CURSOR LOCAL FAST_FORWARD FOR
                 SELECT o.id FROM orders o
                 JOIN orders_status os ON os.id = o.status_id
@@ -408,21 +415,36 @@ class DatabaseCapabilities:
             WHILE @@FETCH_STATUS = 0
             BEGIN
                 EXEC spCheckExistingOrderForCommission @orderID_checkforcomm = @oid;
-                SET @cnt = @cnt + 1;
                 FETCH NEXT FROM cur INTO @oid;
             END
             CLOSE cur;
             DEALLOCATE cur;
-            SELECT @cnt AS anzahl;"""
+
+            SELECT @after = COUNT(*)
+            FROM orders o
+            JOIN orders_status os ON os.id = o.status_id
+            WHERE os.name LIKE '%abgelehnt%';
+
+            SELECT @before AS vorher_abgelehnt,
+                   @after AS nachher_abgelehnt,
+                   @before - @after AS beauftragt;"""
         query_result = self._make_query(query)
         if isinstance(query_result, list) and query_result:
-            cnt = query_result[0].get("anzahl", 0)
+            row = query_result[0]
+            vorher = row.get("vorher_abgelehnt", 0)
+            nachher = row.get("nachher_abgelehnt", 0)
+            beauftragt = row.get("beauftragt", 0)
         else:
-            cnt = 0
-        if cnt == 0:
+            vorher = nachher = beauftragt = 0
+        if vorher == 0:
             msg = "Es gibt keine abgelehnten Bestellungen zum Nachbearbeiten."
+        elif beauftragt == 0:
+            msg = (f"{vorher} abgelehnte Bestellung(en) wurden geprüft. "
+                   f"Keine konnte beauftragt werden (alle noch abgelehnt).")
         else:
-            msg = f"{cnt} abgelehnte Bestellung(en) wurden erneut geprüft und nachbearbeitet."
+            msg = (f"{vorher} abgelehnte Bestellung(en) wurden geprüft. "
+                   f"{beauftragt} davon wurden auf 'beauftragt' gesetzt, "
+                   f"{nachher} sind weiterhin abgelehnt.")
         return self._to_structured([{"status": "success", "message": msg}])
 
     def show_rejected_orders(self) -> Structured:
