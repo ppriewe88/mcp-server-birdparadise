@@ -14,7 +14,7 @@ EMPTY_RETURN = {
     "Ungültige Anfrage oder keine Daten gefunden": "Es wurden keine Daten gefunden, die den Kriterien entsprechen."
 }
 ERROR_RETURN = {
-    "Fehler": "Es ist ein Fehler aufgetreten. Bitte überprüfe die Eingaben und versuche es erneut."
+    "Fehler": "Es gab ein Problem bei der Verbindung mit dem Server. Die Anfrage konnte nicht durchgefuehrt werden. Versuchen Sie es nochmal, oder wenden Sie sich an den Administrator/Betreiber des Servers."
 }
 class Structured(BaseModel):
     data: dict[str, Any]
@@ -568,3 +568,4 @@ class DatabaseCapabilities:
             WHERE i.id = {invoice_id};"""
         query_result = self._make_query(query)
         return self._to_structured(query_result)
+
