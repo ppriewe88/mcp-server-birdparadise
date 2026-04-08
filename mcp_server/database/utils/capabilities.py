@@ -24,6 +24,16 @@ class DatabaseCapabilities:
     def __init__(self) -> None:
         pass
 
+    def normalize_empty_inputs(self, values: list[Any]) -> list[Any]:
+        """Map frontend sentinel string 'EMPTY' to None for optional inputs."""
+        normalized: list[Any] = []
+        for value in values:
+            if isinstance(value, str) and value.strip().upper() == "EMPTY":
+                normalized.append(None)
+            else:
+                normalized.append(value)
+        return normalized
+
     def _make_query(
         self,
         input_query: str,

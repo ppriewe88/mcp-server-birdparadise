@@ -58,6 +58,8 @@ def search_customer_capa(
     ] = None,
 ) -> Structured:
     """Tool, um Informationen über einen Kunden anhand seiner ID oder einem Suchtext zu erhalten."""
+    customer_id, search_text = db.normalize_empty_inputs([customer_id, search_text])
+
     if not customer_id and not search_text:
         raise ValueError(
             "Invalid input. Please provide either customer_id or search_text."
@@ -101,6 +103,10 @@ def search_product_capa(
     ] = None,
 ) -> Structured:
     """Tool, um Informationen über ein Produkt zu erhalten."""
+    product_id, search_text, category_id = db.normalize_empty_inputs(
+        [product_id, search_text, category_id]
+    )
+
     if not product_id and not search_text and not category_id:
         raise ValueError(
             "Invalid input. Please provide either product_id, search_text, or category_id."
@@ -153,6 +159,10 @@ def search_auftrag_capa(
     ] = None,
 ) -> Structured:
     """Tool, um Aufträge nach Kunden-ID, Bestell-ID oder Rechnungs-ID zu suchen."""
+    customer_id, order_id, invoice_id = db.normalize_empty_inputs(
+        [customer_id, order_id, invoice_id]
+    )
+
     result: Structured = db.search_auftrag(customer_id, order_id, invoice_id)
     return result
 
